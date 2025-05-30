@@ -1,52 +1,38 @@
-#delivery-map/
-#├── index.html       ← 실행할 웹페이지
-#├── delivery.csv     ← 업로드한 CSV 파일 (Num, Latitude, Longitude)
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Delivery Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+import pandas as pd
+import folium
+from sklearn.cluster import KMeans
 
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <style>
-    #map { height: 100vh; }
-  </style>
-</head>
-<body>
-  <div id="map"></div>
+# CSV 불러오기
+df = pd.read_csv("Delivery.csv")
 
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <!-- PapaParse for CSV parsing -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+# 결측치 제거
+df = df.dropna(subset=["Latitude", "Longitude"])
 
-  <script>
-    const map = L.map('map').setView([37.5, 126.75], 11); // 기본 중심 좌표
+# KMeans 군집화
+k = 5  # 군집 수 조정 가능
+kmeans = KMeans(n_clusters=k, random_state=42)
+df['Cluster'] = kmeans.fit_predict(df[['Latitude', 'Longitude']])
 
-    // OpenStreetMap 타일 추가
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+# 지도 중심 설정
+center_lat = df["Latitude"].mean()
+center_lon = df["Longitude"].mean()
+m = folium.Map(location=[center_lat, center_lon], zoom_start=12)
 
-    // CSV 파일 불러오기
-    Papa.parse("delivery.csv", {
-      download: true,
-      header: true,
-      complete: function(results) {
-        results.data.forEach(row => {
-          if (row.Latitude && row.Longitude) {
-            const lat = parseFloat(row.Latitude);
-            const lon = parseFloat(row.Longitude);
-            const label = row.Num || 'No Label';
-            L.marker([lat, lon])
-              .addTo(map)
-              .bindPopup(`Num: ${label}`);
-          }
-        });
-      }
-    });
-  </script>
-</body>
-</html>
+# 색상 팔레트
+colors = ['red', 'blue', 'green', 'purple', 'orange']
+
+# 군집별 마커 추가
+for _, row in df.iterrows():
+    folium.CircleMarker(
+        location=[row["Latitude"], row["Longitude"]],
+        radius=6,
+        color=colors[row["Cluster"] % len(colors)],
+        fill=True,
+        fill_color=colors[row["Cluster"] % len(colors)],
+        fill_opacity=0.7,
+        popup=f"Num: {row['Num']} (Cluster {row['Cluster']})"
+    ).add_to(m)
+
+# 결과 저장
+m.save("delivery_cluster_map.html")
+print("✅ 'delivery_cluster_map.html' 파일이 생성되었습니다.")
