@@ -1,6 +1,6 @@
-delivery-map/
-├── index.html       ← 실행할 웹페이지
-├── delivery.csv     ← 업로드한 CSV 파일 (Num, Latitude, Longitude)
+#delivery-map/
+#├── index.html       ← 실행할 웹페이지
+#├── delivery.csv     ← 업로드한 CSV 파일 (Num, Latitude, Longitude)
 <!DOCTYPE html>
 <html>
 <head>
