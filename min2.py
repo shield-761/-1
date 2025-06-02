@@ -1,6 +1,7 @@
 import pandas as pd
 import folium
 from sklearn.cluster import KMeans
+folium
 
 # CSV 불러오기
 df = pd.read_csv("Delivery.csv")
